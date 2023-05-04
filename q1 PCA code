@@ -1,0 +1,123 @@
+# load libraries
+library(DESeq2)
+library(pheatmap)
+library(EnhancedVolcano)
+library(org.Hs.eg.db)
+
+rawCounts <- read.table("question1_read_counts.txt",sep="\t",header=TRUE)
+rawCounts[1,]
+
+rnaseqMatrix <- rawCounts[,c(2:25)]
+rownames(rnaseqMatrix) <- rawCounts[,1]
+head(rnaseqMatrix)
+
+names(rnaseqMatrix) <- c("HET09_1","HET09_2","HET09_3","HET09_4",
+                         "MUT09_1","MUT09_2","MUT09_3","MUT09_4",
+                         "HET18_1","HET18_2","HET18_3","HET18_4",
+                         "MUT18_1","MUT18_2","MUT18_3","MUT18_4",
+                         "HET21_1","HET21_2","HET21_3","HET21_4",
+                         "MUT21_1","MUT21_2","MUT21_3","MUT21_4")
+
+# Define the sample mappings
+samples <- data.frame(matrix(c("HET09_1","HET09_2","HET09_3","HET09_4",
+                               "MUT09_1","MUT09_2","MUT09_3","MUT09_4",
+                               "HET18_1","HET18_2","HET18_3","HET18_4",
+                               "MUT18_1","MUT18_2","MUT18_3","MUT18_4",
+                               "HET21_1","HET21_2","HET21_3","HET21_4",
+                               "MUT21_1","MUT21_2","MUT21_3","MUT21_4",
+                               "HET09","HET09","HET09","HET09",
+                               "MUT09","MUT09","MUT09","MUT09",
+                               "HET18","HET18","HET18","HET18",
+                               "MUT18","MUT18","MUT18","MUT18",
+                               "HET21","HET21","HET21","HET21",
+                               "MUT21","MUT21","MUT21","MUT21"),ncol=2))
+
+names(samples) <- c("ID","Cohort")
+rownames(samples) <- samples[,1]
+samples$Treatment <- factor(c("HET09","HET09","HET09","HET09",
+                            "MUT09","MUT09","MUT09","MUT09",
+                            "HET18","HET18","HET18","HET18",
+                            "MUT18","MUT18","MUT18","MUT18",
+                            "HET21","HET21","HET21","HET21",
+                            "MUT21","MUT21","MUT21","MUT21"))
+
+# Create the DEseq2DataSet object
+deseq2Data <- DESeqDataSetFromMatrix(countData = rnaseqMatrix,
+                                     colData = samples,
+                                     design = ~ Treatment)
+
+# Filter lowly expressed genes
+dim(deseq2Data)
+dim(deseq2Data[rowSums(counts(deseq2Data)) > 10, ])
+
+# Perform pre-filtering of the data
+deseq2Data <- deseq2Data[rowSums(counts(deseq2Data)) > 10, ]
+
+
+# Run pipeline for differential expression steps
+deseq2Data <- DESeq(deseq2Data)
+
+# rlog transform counts
+rld <- rlog(deseq2Data, blind=FALSE)
+rlogcounts <- data.frame(assay(deseq2Data))
+rownames(rlogcounts) <- rownames(deseq2Data)
+
+# PCA plot
+plotPCA(rld, intgroup=c("Treatment"))
+
+# PCA plot data
+plotPCA(rld, intgroup=c("Treatment"), returnData=TRUE)
+
+pdf("PCA_plot_all_samples.pdf")
+plotPCA(rld, intgroup=c("Treatment"))
+#text(p$PC1[1],p$PC2[2],p$name)
+dev.off()
+
+###########################################################
+
+# Pairwise contrast of HET09 & MUT09
+res_q109 <- results(deseq2Data, contrast=c("Treatment", "HET09", "MUT09"))
+resOrdered_Q109 <- res_q109[order(res_q109$pvalue),]
+
+# Get number of differentially expressed data at different thresholds
+summary(res_q109)
+sum(res_q109$padj < 0.05, na.rm=TRUE)
+sum(res_q109$pvalue < 0.05, na.rm=TRUE)
+
+# MA plot
+pdf("res_muthet09.pdf")
+plotMA(res_q109)
+dev.off()
+
+###########################################################
+
+# Pairwise contrast of HET18 & MUT18
+res_q118 <- results(deseq2Data, contrast=c("Treatment", "HET18", "MUT18"))
+resOrdered_Q118 <- res_q118[order(res_q118$pvalue),]
+
+# Get number of differentially expressed data at different thresholds
+summary(res_q118)
+sum(res_q118$padj < 0.05, na.rm=TRUE)
+sum(res_q118$pvalue < 0.05, na.rm=TRUE)
+
+# MA plot
+pdf("res_muthet18.pdf")
+plotMA(res_q118)
+dev.off()
+
+############################################################
+
+# Pairwise contrast of HET21 & MUT21
+res_q121 <- results(deseq2Data, contrast=c("Treatment", "HET21", "MUT21"))
+resOrdered_Q121 <- res_q121[order(res_q121$pvalue),]
+
+# Get number of differentially expressed data at different thresholds
+summary(res_q121)
+sum(res_q121$padj < 0.05, na.rm=TRUE)
+sum(res_q121$pvalue < 0.05, na.rm=TRUE)
+
+# MA plot
+pdf("res_muthet21.pdf")
+plotMA(res_q121)
+dev.off()
+
