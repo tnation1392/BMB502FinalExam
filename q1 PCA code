@@ -5,16 +5,18 @@ library(EnhancedVolcano)
 library(org.Hs.eg.db)
 
 rawCounts <- read.table("question1_read_counts.txt",sep="\t",header=TRUE)
+rawCounts <- rawCounts[,-c(15)]
+
 rawCounts[1,]
 
-rnaseqMatrix <- rawCounts[,c(2:25)]
+rnaseqMatrix <- rawCounts[,c(2:24)]
 rownames(rnaseqMatrix) <- rawCounts[,1]
 head(rnaseqMatrix)
 
 names(rnaseqMatrix) <- c("HET09_1","HET09_2","HET09_3","HET09_4",
                          "MUT09_1","MUT09_2","MUT09_3","MUT09_4",
                          "HET18_1","HET18_2","HET18_3","HET18_4",
-                         "MUT18_1","MUT18_2","MUT18_3","MUT18_4",
+                         "MUT18_1","MUT18_3","MUT18_4",
                          "HET21_1","HET21_2","HET21_3","HET21_4",
                          "MUT21_1","MUT21_2","MUT21_3","MUT21_4")
 
@@ -22,24 +24,24 @@ names(rnaseqMatrix) <- c("HET09_1","HET09_2","HET09_3","HET09_4",
 samples <- data.frame(matrix(c("HET09_1","HET09_2","HET09_3","HET09_4",
                                "MUT09_1","MUT09_2","MUT09_3","MUT09_4",
                                "HET18_1","HET18_2","HET18_3","HET18_4",
-                               "MUT18_1","MUT18_2","MUT18_3","MUT18_4",
+                               "MUT18_1","MUT18_3","MUT18_4",
                                "HET21_1","HET21_2","HET21_3","HET21_4",
                                "MUT21_1","MUT21_2","MUT21_3","MUT21_4",
                                "HET09","HET09","HET09","HET09",
                                "MUT09","MUT09","MUT09","MUT09",
                                "HET18","HET18","HET18","HET18",
-                               "MUT18","MUT18","MUT18","MUT18",
+                               "MUT18","MUT18","MUT18",
                                "HET21","HET21","HET21","HET21",
                                "MUT21","MUT21","MUT21","MUT21"),ncol=2))
 
 names(samples) <- c("ID","Cohort")
 rownames(samples) <- samples[,1]
 samples$Treatment <- factor(c("HET09","HET09","HET09","HET09",
-                            "MUT09","MUT09","MUT09","MUT09",
-                            "HET18","HET18","HET18","HET18",
-                            "MUT18","MUT18","MUT18","MUT18",
-                            "HET21","HET21","HET21","HET21",
-                            "MUT21","MUT21","MUT21","MUT21"))
+                              "MUT09","MUT09","MUT09","MUT09",
+                              "HET18","HET18","HET18","HET18",
+                              "MUT18","MUT18","MUT18",
+                              "HET21","HET21","HET21","HET21",
+                              "MUT21","MUT21","MUT21","MUT21"))
 
 # Create the DEseq2DataSet object
 deseq2Data <- DESeqDataSetFromMatrix(countData = rnaseqMatrix,
@@ -65,10 +67,10 @@ rownames(rlogcounts) <- rownames(deseq2Data)
 # PCA plot
 plotPCA(rld, intgroup=c("Treatment"))
 
-# PCA plot data
+# PCA plot data w/ table
 plotPCA(rld, intgroup=c("Treatment"), returnData=TRUE)
 
-pdf("PCA_plot_all_samples.pdf")
+pdf("PCA_plot_all_samples_without_MUT18_2.pdf")
 plotPCA(rld, intgroup=c("Treatment"))
 #text(p$PC1[1],p$PC2[2],p$name)
 dev.off()
@@ -101,7 +103,7 @@ sum(res_q118$padj < 0.05, na.rm=TRUE)
 sum(res_q118$pvalue < 0.05, na.rm=TRUE)
 
 # MA plot
-pdf("res_muthet18.pdf")
+pdf("res_muthet18_without_18_2.pdf")
 plotMA(res_q118)
 dev.off()
 
